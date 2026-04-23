@@ -1,3 +1,13 @@
+// ESP32 Code for Knightsaurus.
+// Team Knightsaurus: Spring 2026.
+
+// This code reads in the Bluetooth (bitmask) commands from the remote controller.
+// Then the code assigns each specific button press a unqiue character used for SPI communications
+// with the Arduino UNO R4 WIFI. The UNO uses these characters to know which RC button was pressed.
+
+// Thank you to Bluepad32 for the base code for RC Bluetooth decoding.
+// Bluepad 32 GitHub: https://github.com/ricardoquesada/bluepad32
+
 #include "driver/spi_slave.h"
 #include <Bluepad32.h>
 
@@ -14,7 +24,7 @@ spi_slave_transaction_t t;
 
 
 
-ControllerPtr myControllers[BP32_MAX_GAMEPADS];
+ControllerPtr myControllers[BP32_MAX_GAMEPADS]; // Initializes the controller object.
 
 // This callback gets called any time a new gamepad is connected.
 // Up to 4 gamepads can be connected at the same time.
@@ -55,9 +65,11 @@ void onDisconnectedController(ControllerPtr ctl) {
     }
 }
 
-// ========= SEE CONTROLLER VALUES IN SERIAL MONITOR ========= //
 
+// This function displays the controller values in the serial monitor.
+// Useful for debugging or pairing a new type of controller.
 void dumpGamepad(ControllerPtr ctl) {
+  // Uncomment to see the controller values in the serial monitor.
   /*
   Serial.printf(
   "idx=%d, dpad: 0x%02x, buttons: 0x%04x, axis L: %4d, %4d, axis R: %4d, %4d, brake: %4d, throttle: %4d, "
@@ -82,14 +94,10 @@ void dumpGamepad(ControllerPtr ctl) {
   */
 }
 
-// ========= GAME CONTROLLER ACTIONS SECTION ========= //
-
+// Function for processing the Bluetooth remote controller commands (bitmasks).
 void processGamepad(ControllerPtr ctl) {
-  // There are different ways to query whether a button is pressed.
-  // By query each button individually:
-  //  a(), b(), x(), y(), l1(), etc...
 
-   //== XBOX A or PS5 X Button = 0x0001 ==//
+  //== XBOX A or PS5 X Button = 0x0001 ==//
   if (ctl->buttons() == 0x0001) {
     // code for when A button is pushed
     Serial.println("A Pushed");
@@ -196,23 +204,6 @@ void processGamepad(ControllerPtr ctl) {
 
   downWasPressed = downPressed;
 
-
-  // //== XBOX Dpad LEFT button = 0x08 ==//
-  // if (ctl->dpad() & 0x08) {
-  //   // code for when dpad left button is pushed
-  //   Serial.println("DPAD Left Pushed");
-  //   memset(&t, 0, sizeof(t));
-  //   memset(recvbuf, 0, sizeof(recvbuf));
-
-  //   sendbuf[0] = 'D';  // ESP32 will send this to the UNO
-
-  //   t.length = 8;               // 1 byte
-  //   t.tx_buffer = sendbuf;
-  //   t.rx_buffer = recvbuf;
-
-  //   spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
-  // }
-
   // ===== LEFT DPAD STATE TRACKING =====
   static bool leftWasPressed = false;
   bool leftPressed = (ctl->dpad() & 0x08);
@@ -268,8 +259,6 @@ void processGamepad(ControllerPtr ctl) {
     t.rx_buffer = recvbuf;
 
     spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
-
-
 
   }
   if (ctl->buttons() != 0x0020) {
@@ -354,7 +343,7 @@ void processGamepad(ControllerPtr ctl) {
     spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
   }
   if (ctl->buttons() != 0x02) {
-    // code for when LT button is released
+    // code for when screenshot is released.
   }
 
   //== XBOX Start Button = 0x040 ==//
@@ -373,7 +362,7 @@ void processGamepad(ControllerPtr ctl) {
     spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
   }
   if (ctl->buttons() != 0x02) {
-    // code for when LT button is released
+    // code for when start button is released
   }
 
   //== R3 = 0x0200 ==//
@@ -392,7 +381,7 @@ void processGamepad(ControllerPtr ctl) {
     spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
   }
   if (ctl->buttons() != 0x02) {
-    // code for when LT button is released
+    // code for when R3 button is released
   } 
 
 
@@ -438,6 +427,7 @@ void processGamepad(ControllerPtr ctl) {
   dumpGamepad(ctl);
 }
 
+// Helper function to process the controller.
 void processControllers() {
   for (auto myController : myControllers) {
     if (myController && myController->isConnected() && myController->hasData()) {
@@ -451,10 +441,11 @@ void processControllers() {
   }
 }
 
-
+// Setup Function used to Initialize Everything for the ESP32.
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); // Baudrate of 115200 to communicate via SPI to the UNO R4.
 
+  // Initializes the SPI functioning with the UNO R4.
   spi_bus_config_t buscfg = {
     .mosi_io_num = PIN_MOSI,
     .miso_io_num = PIN_MISO,
@@ -471,7 +462,6 @@ void setup() {
     .mode = 0
   };
 
-  //Serial.println("Test");
   spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
 
   Serial.println("ESP32 SPI Slave Ready");
@@ -483,25 +473,12 @@ void setup() {
   // Setup the Bluepad32 callbacks
   BP32.setup(&onConnectedController, &onDisconnectedController);
 
-  // "forgetBluetoothKeys()" should be called when the user performs
-  // a "device factory reset", or similar.
-  // Calling "forgetBluetoothKeys" in setup() just as an example.
-  // Forgetting Bluetooth keys prevents "paired" gamepads to reconnect.
-  // But it might also fix some connection / re-connection issues.
-  BP32.forgetBluetoothKeys();
-
-  // Enables mouse / touchpad support for gamepads that support them.
-  // When enabled, controllers like DualSense and DualShock4 generate two connected devices:
-  // - First one: the gamepad
-  // - Second one, which is a "virtual device", is a mouse.
-  // By default, it is disabled.
-  BP32.enableVirtualDevice(false);
-
 }
 
+// Loop Function for the ESP32. Runs Continuously.
 void loop() {
 
-  
+  // Constantly sends a "dummy" character to the UNO R4.
   memset(&t, 0, sizeof(t));
   memset(recvbuf, 0, sizeof(recvbuf));
 
@@ -513,6 +490,7 @@ void loop() {
 
   spi_slave_transmit(VSPI_HOST, &t, portMAX_DELAY);
 
+  // Used to update the controller commands.
   bool dataUpdated = BP32.update();
   if (dataUpdated)
     processControllers();
