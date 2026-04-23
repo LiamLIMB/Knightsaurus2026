@@ -1,3 +1,14 @@
+// Main Code for Knightsaurus. Install onto the Arduino UNO R4 WIFI Microcontroller.
+// Team Knightsaurus: Spring 2026.
+
+// This code reads in controller button presses (via the ESP32 SPI) and commands Knightsaurus
+// to do the proper function.
+
+// Functions: Forward Walking, Rough Terrain Walking, Backwards Walking (in Progress),
+// Turning, Emotes (Dance, Lunge, Power Stance), Roar, Move Head, Move Tail.
+
+// Background Functions: Battery Monitoring, Processing SPI (RC via ESP32) Commands, Updating OLED Display.
+
 #include <SPI.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <DFRobotDFPlayerMini.h>
@@ -28,7 +39,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 DFRobotDFPlayerMini myDFPlayer;
 
-// servos:
+// Servos:
 #define SERVO1_CHANNEL  0
 #define SERVO2_CHANNEL  1
 #define SERVO3_CHANNEL  2
@@ -42,13 +53,13 @@ DFRobotDFPlayerMini myDFPlayer;
 #define SERVO11_CHANNEL  10
 #define SERVO12_CHANNEL  11
 
-// Adjust these according to YOUR servos
+// Based on the 45 kg Servos Used:
 #define SERVO_MIN_PULSE  150
 #define SERVO_MAX_PULSE  600
 
 volatile uint8_t currentCommand = 0; 
 
-// Servos for Leg the legs
+// Servos for Leg Joints:
 uint8_t leg1[3] = {0, 1, 2};  // SERVO1, SERVO2, SERVO3 -> Front Left
 uint8_t leg2[3] = {3, 4, 5};  // SERVO4, SERVO5, SERVO6 -> Front Right
 uint8_t leg3[3] = {6, 7, 8};  // SERVO7, SERVO8, SERVO9 -> Back Left
@@ -56,7 +67,8 @@ uint8_t leg4[3] = {9, 10, 11};  // SERVO10, SERVO11, SERVO12 -> Back Right
 
 
 // Intiialize for Reading the LiPo Battery Percentage
-#define lipoPin A0 // Change this to the correct pin
+#define lipoPin A0
+
 // Used for the voltage divider:
 const float R1 = 100000.0; // 100 kOhm resistor 1
 const float R2 = 33000.0; // 30 kOhm resistor 2
@@ -79,7 +91,7 @@ Point table[] = {
 const int tableSize = sizeof(table) / sizeof(table[0]); // Provides the size of the LiPo percentage table
 
 
-// Set up for the dino eyes:
+// Dino Eyes (LEDs) Initialization:
 const int LED_PIN    = 4;
 const int JAW_SERVO_PIN  = 5;
 
@@ -126,7 +138,7 @@ bool emote2Active = false;
 bool emote2Resetting = false;
 const unsigned long EMOTE2_DURATION = 4500; // 3 seconds
 int emote2LegIndex = 0;     // 0–3 for legs 1→2→3→4
-int emote2LegPhase = 0;     // 0=lift, 1=slam, 2=return, 3=next leg
+int emote2LegPhase = 0;     // 0 = lift, 1 = slam, 2 = return, 3 = next leg
 unsigned long emote2Start = 0;
 
 unsigned long lastHeadTailUpdate = 0;
@@ -225,59 +237,6 @@ const int POS_B_SERVO2_4 = 88; // new 92 deg ==> 46 deg in real life
 const int POS_C_SERVO2_4 = 60; // new 140 deg ==> 70 deg in real life     40
 
 
-//===========================================================================================
-
-/*
-// new angles
-// Leg 1 Servo positions ------------------------------------------------------
-const int SERVO1_Zero = 90; // new 0
-const int POS_A_SERVO1 = 110; // new 20 deg ==> 10 deg in real life
-const int POS_B_SERVO1 = 130; // new 40 deg ==> 20 deg in real life
-const int POS_C_SERVO1 = 170; // new 80 deg ==> 40 deg in real life
-
-const int SERVO2_Zero = 180; // new 0
-const int POS_A_SERVO2 = 140; // new 40 deg ==> 20 deg in real life
-const int POS_B_SERVO2 = 106; // new 74 deg ==> 37 deg in real life
-const int POS_C_SERVO2 = 60; // new 140 deg ==> 70 deg in real life     40
-
-// Leg 2 Servo positions ------------------------------------------------------
-
-const int SERVO1_2_Zero = 90; // new 0
-const int POS_A_SERVO1_2 = 70; // new -20 deg ==> -10 deg in real life
-const int POS_B_SERVO1_2 = 50; // new -40 deg ==> -20 deg in real life
-const int POS_C_SERVO1_2 = 10; // new -80 deg ==> -40 deg in real life
-
-const int SERVO2_2_Zero = 90; // new 0
-const int POS_A_SERVO2_2 = 130; // new -40 deg ==> -20 deg in real life
-const int POS_B_SERVO2_2 = 164; // new -74 deg ==> -37 deg in real life
-const int POS_C_SERVO2_2 = 210; // new -140 deg ==> -70 deg in real life     230
-
-
-// Leg 3 Servo positions ------------------------------------------------------
-
-const int SERVO1_3_Zero = 90; // new 0
-const int POS_A_SERVO1_3 = 70; // new -20 deg ==> -10 deg in real life
-const int POS_B_SERVO1_3 = 50; // new -40 deg ==> -20 deg in real life
-const int POS_C_SERVO1_3 = 10; // new -80 deg ==> -40 deg in real life
-
-const int SERVO2_3_Zero = 90; // new 0
-const int POS_A_SERVO2_3 = 130; // new -40 deg ==> -20 deg in real life
-const int POS_B_SERVO2_3 = 164; // new -74 deg ==> -37 deg in real life
-const int POS_C_SERVO2_3 = 210; // new -140 deg ==> -70 deg in real life     230
-
-// Leg 4 Servo positions ------------------------------------------------------
-
-const int SERVO1_4_Zero = 90; // new 0
-const int POS_A_SERVO1_4 = 110; // new 20 deg ==> 10 deg in real life
-const int POS_B_SERVO1_4 = 130; // new 40 deg ==> 20 deg in real life
-const int POS_C_SERVO1_4 = 170; // new 80 deg ==> 40 deg in real life
-
-const int SERVO2_4_Zero = 180; // new 0
-const int POS_A_SERVO2_4 = 140; // new 40 deg ==> 20 deg in real life
-const int POS_B_SERVO2_4 = 106; // new 74 deg ==> 37 deg in real life
-const int POS_C_SERVO2_4 = 60; // new 140 deg ==> 70 deg in real life     40
-*/
-
 // Servo 3 positions -------------------------------------------------------------
 const int SERVO3_HOME_2_3   = 0;
 const int SERVO3_HOME_1_4   = 80;
@@ -311,9 +270,7 @@ int hipYawNeutral[4] = {
 const int hipYawOutward[4] = { -1, +1, +1, -1 };
 
 
-// ===============================
-// AUTO‑TUNING PARAMETERS
-// ===============================
+// Auto-Tuning Parameters:
 float SPEED_SCALE = 0.8;        // 1.0 = normal speed
 
 // Load scaling per leg (used for fine tuning)
@@ -333,9 +290,8 @@ int scaledAngle(int neutralB, int target, float scale) {
 }
 
 
-// =====================================================
-// NON-BLOCKING GAIT ENGINE STATE
-// =====================================================
+
+// Initialize States for the Non-Blocking Gait Engine:
 bool walkingForward = false;  // Flag for checking if the robot is currently walking forwards.
 bool walkingBackward = false; // Flag for checking if the robot is currently walking backwards.
 int servo1Pos = POS_B_SERVO1; // Initializes servo 1 position for the front legs
@@ -351,17 +307,15 @@ bool killSwitchFlag = false; // Flag for checking if the robot kill switch shoul
 
 int gaitPhase = 0; // Initializes the gate phase.
 
-// =====================================================
-// SERVO ARRAYS (0 is hip, 1 is knee)
-// =====================================================
+
+// Servo Arrays (0 is hip, 1 is knee)
 uint8_t leg1Servos[2] = { leg1[0], leg1[1] };
 uint8_t leg2Servos[2] = { leg2[0], leg2[1] };
 uint8_t leg3Servos[2] = { leg3[0], leg3[1] };
 uint8_t leg4Servos[2] = { leg4[0], leg4[1] };
 
-// =====================================================
-// SERVO HELPER
-// =====================================================
+
+// Helper Function for Setting the Servo Angles:
 void setServoAngle270(uint8_t channel, int angle) {
   angle = constrain(angle, 0, 270);
   uint16_t pulse = map(angle, 0, 270, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
@@ -408,10 +362,9 @@ uint8_t phase23_back = 0;
 unsigned long lastStepTime = 0;
 unsigned long stepInterval = 12;
 
-// =====================================================
+
 // Moves one leg toward its target position.
 // Returns true when BOTH hip and knee have reached target.
-// =====================================================
 bool stepLegTowardTarget(LegState &L) {
   if (!L.active) return true;   // If leg is inactive, treat as "already done"
 
@@ -444,7 +397,7 @@ bool stepLegTowardTarget(LegState &L) {
 }
 
 
-// Gait phases for Leg 1 + Leg 4 (diagonal pair)
+// Gait phases for Leg 1 + Leg 4 (diagonal pair) for Forward Walking.
 // Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase14() {
   switch (phase14) {
@@ -513,10 +466,8 @@ void setTargetsPhase14() {
 
 
 
-// =====================================================
-// Gait phases for Leg 2 + Leg 3 (diagonal pair)
-// No load scaling needed for these legs
-// =====================================================
+// Gait phases for Leg 2 + Leg 3 (diagonal pair) for Forward Walking.
+// Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase23() {
   switch (phase23) {
 
@@ -582,7 +533,8 @@ void setTargetsPhase23() {
   }
 }
 
-
+// Gait phases for Leg 1 + Leg 4 (diagonal pair) for Backward Walking.
+// Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase14_Back() {
   switch (phase14_back) {
 
@@ -648,7 +600,8 @@ void setTargetsPhase14_Back() {
   }
 }
 
-
+// Gait phases for Leg 2 + Leg 3 (diagonal pair) for Backward Walking.
+// Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase23_Back() {
   switch (phase23_back) {
 
@@ -714,7 +667,7 @@ void setTargetsPhase23_Back() {
   }
 }
 
-// Gait phases for Leg 1 + Leg 4 (diagonal pair) for Rough Terrain
+// Gait phases for Leg 1 + Leg 4 (diagonal pair) for Rough Terrain.
 // Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase14_RoughTerrain() {
   switch (phase14) {
@@ -792,8 +745,8 @@ void setTargetsPhase14_RoughTerrain() {
   }
 }
 
-// Gait phases for Leg 2 + Leg 3 (diagonal pair) for Rough Terrain
-// No load scaling needed for these legs
+// Gait phases for Leg 2 + Leg 3 (diagonal pair) for Rough Terrain.
+// Scaled angle can be used to reduce torque if needed (for a leg)
 void setTargetsPhase23_RoughTerrain() {
   switch (phase23) {
 
@@ -872,13 +825,13 @@ void setTargetsPhase23_RoughTerrain() {
 
 
 // Update walk function with turning integrated. 
+// This is the primary walking function for Knightsaurus.
 void updateWalk() {
 
   if (emote1Active || emote2Active || emote3Active) return; // prevents walking/turning during emote
 
-  // =====================================================
-  // TURNING OVERRIDES WALKING
-  // =====================================================
+  // Note: Turning Overrides Walking!
+
   // Left Turn:
   if (turnValue <= -0.1) {
 
@@ -1007,17 +960,13 @@ void updateWalk() {
 
 
 
-  // =====================================================
-  // NO TURNING → reset hip yaw + continue walking
-  // =====================================================
+  // If not turning → reset hip yaw + continue walking
   for (int i = 0; i < 4; i++) {
       setServoAngle270(hipYawChannel[i], hipYawNeutral[i]);
   }
 
-  // =====================================================
-  // BACKWARD WALKING ENGINE
-  // =====================================================
 
+  // Backward Walking Engine:
   if (walkingBackward) {
 
       unsigned long now = millis();
@@ -1128,9 +1077,7 @@ void updateWalk() {
       return;
   }
 
-  // =====================================================
-  // NORMAL WALKING ENGINE
-  // =====================================================
+  // Forward (Primary) Walking Gait Engine:
 
   if (!walkingForward) return;
 
@@ -1262,11 +1209,10 @@ void updateWalk() {
 }
 
 
-void turnOnComponents()
-{
-  // Nothing here yet.
-}
-
+// Remote Controller Based Kill Switch for Knightsaurus.
+// CRITICAL NOTE: The Battery will not switch off with this kill switch.
+// The Battery must be shut off using the LiPo Switch mounted on the chassis box
+// when it is safe to do so.
 void killSwitch()
 {
   // if the 'screenshot' button is pressed -> shutdown robot
@@ -1283,8 +1229,6 @@ void killSwitch()
 
   // Exits the Arduino Program.
   //exit(0);
-
-
 }
 
 // Gets the battery percentage based on the LiPo voltage at an analog pin
@@ -1309,6 +1253,7 @@ int getBatteryPercent(float v) {
   return 0;
 }
 
+// Draws the battery icon on the OLED Display
 void drawBatteryIcon(int x, int y, int percent) {
   // Battery outline
   display.drawRect(x, y, 30, 14, SSD1306_WHITE);   // main body
@@ -1325,7 +1270,7 @@ void drawBatteryIcon(int x, int y, int percent) {
   display.fillRect(x + 2, y + 2, fillWidth, 10, SSD1306_WHITE);
 }
 
-
+// Displays the battery informaiton on the OLED Display.
 void showBattery(float voltage, int percent) {
   display.clearDisplay();
 
@@ -1350,6 +1295,7 @@ void showBattery(float voltage, int percent) {
   display.display();
 }
 
+// Draws the top bar on the OLED Display.
 void drawTopBar(int percent, const char* mode) 
 {
     display.setTextColor(SSD1306_WHITE);
@@ -1366,7 +1312,7 @@ void drawTopBar(int percent, const char* mode)
     display.print("%");
 }
 
-
+// Draws the Main HUD Information on the OLED Display.
 void drawMainHUD(float voltage, const char* gait, const char* turn, const char* emote) {
     // Blue zone (16–63 px)
     display.setTextColor(SSD1306_WHITE);
@@ -1390,6 +1336,7 @@ void drawMainHUD(float voltage, const char* gait, const char* turn, const char* 
     display.print(emote);
 }
 
+// Displays the HUD on the OLED Display.
 void showHUD(float voltage, int percent, const char* mode, const char* gait, const char* turn, const char* emote) {
     display.clearDisplay();
 
@@ -1400,9 +1347,7 @@ void showHUD(float voltage, int percent, const char* mode, const char* gait, con
 }
 
 
-// =====================================================
-// MOVEMENT FUNCTIONS
-// =====================================================
+// Movement Command Functions for Knightsaurus:
 
 
 void turnLeft() {
@@ -1420,6 +1365,7 @@ void turnStop() {
   turnValue = 0.0;
 }
 
+// Function to move the tail left.
 void tailLeft()
 {
   // Moves the servo left until it is at its max threshold.
@@ -1430,6 +1376,7 @@ void tailLeft()
   }
 }
 
+// Function to the move the tail right.
 void tailRight()
 {
   // Moves the servo right until it is at its max threshold.
@@ -1440,6 +1387,7 @@ void tailRight()
   }
 }
 
+// Function to center the tail.
 void tailCenter()
 {
   // Moves the servo right until it is at its max threshold.
@@ -1461,6 +1409,7 @@ void tailCenter()
   tailServo.write(tailServoPos);
 }
 
+// Function to move the head left.
 void headLeft()
 {
   // Moves the servo left until it is at its max threshold.
@@ -1471,6 +1420,7 @@ void headLeft()
   }
 }
 
+// Function to move the head right.
 void headRight()
 {
   // Moves the servo right until it is at its max threshold.
@@ -1481,6 +1431,7 @@ void headRight()
   }
 }
 
+// Function to center the head.
 void neckCenter()
 {
   if (neckServoPos < NECK_ZERO)
@@ -1501,11 +1452,13 @@ void neckCenter()
   neckServo.write(neckServoPos);
 }
 
+// Function to move the jaw of Knightsaurus.
 void jawMove()
 {
   jawServo.write(JAW_OPEN);    // 110 deg while holding button 
 }
 
+// This is Knightsaurus' "roar" function (plays SFX and moves jaw).
 void soundEffect(int soundNum)
 {
   // Call the Jaw Movement Function
@@ -1654,9 +1607,7 @@ void updateEmote1()
 }
 
 
-// =====================================================
-// START EMOTE 2
-// =====================================================
+// Emote 2 (DANCE) - Quickly moves the legs (in a cycle) up and down: 
 void startEmote2() {
     emote2Active = true;
     emote2Resetting = false;
@@ -1679,17 +1630,13 @@ void startEmote2() {
 }
 
 
-// =====================================================
-// UPDATE EMOTE 2
-// =====================================================
+// Function to update emote 2.
 void updateEmote2() {
     if (!emote2Active && !emote2Resetting) return;
 
     unsigned long now = millis();
 
-    // =====================================================
-    // RESET PHASE
-    // =====================================================
+    // Reset Phase:
     if (emote2Resetting)
     {
         bool d1 = stepLegTowardTarget(leg1State);
@@ -1726,9 +1673,7 @@ void updateEmote2() {
     }
 
 
-    // =====================================================
-    // HEAD + TAIL SWING
-    // =====================================================
+    // Head and Tail Swing:
     if (now - lastHeadTailUpdate > HEAD_TAIL_INTERVAL) {
         lastHeadTailUpdate = now;
 
@@ -1745,9 +1690,8 @@ void updateEmote2() {
         }
     }
 
-    // =====================================================
-    // LEG STOMP USING WALKING GAIT LOGIC
-    // =====================================================
+
+    // Leg "Stomping" (Dancing) Movement Gait:
 
     LegState* L;
     int hipA, kneeA, hipC, kneeC, hipB, kneeB;
@@ -1792,9 +1736,7 @@ void updateEmote2() {
             break;
     }
 
-    // =====================================================
-    // END EMOTE → RESET
-    // =====================================================
+    // Ends the emote and resets Knightsaurus to rest position:
     if (now - emote2Start > EMOTE2_DURATION) {
         emote2Active = false;
         emote2Resetting = true;
@@ -1850,9 +1792,7 @@ void updateEmote3()
 
   unsigned long now = millis();
 
-  // =====================================================
-  // RESET PHASE — runs FIRST, smooth return to B stance
-  // =====================================================
+  // Reset the emote phases:
   if (emote3Resetting)
   {
       bool d1 = stepLegTowardTarget(leg1State);
@@ -1889,9 +1829,7 @@ void updateEmote3()
   }
 
 
-  // =====================================================
-  // ACTIVE EMOTE PHASE
-  // =====================================================
+  // Activates the emote phases:
 
   // Move legs toward targets
   bool d1 = stepLegTowardTarget(leg1State);
@@ -1901,9 +1839,7 @@ void updateEmote3()
 
   switch (emote3Phase) {
 
-      // ============================
-      // PHASE 0 — ROAR POSE
-      // ============================
+      // Roar Pose
       case 0:
           // Front legs lift
           leg1State.targetHip  = POS_A_SERVO1;
@@ -1927,9 +1863,7 @@ void updateEmote3()
           break;
 
 
-      // ============================
-      // PHASE 1 — STOMP
-      // ============================
+      // Stomp
       case 1:
           // Front legs slam down
           leg1State.targetHip  = POS_C_SERVO1;
@@ -1953,9 +1887,7 @@ void updateEmote3()
           break;
 
 
-      // ============================
-      // PHASE 2 — TAIL WHIP
-      // ============================
+      // Tail Whip
       case 2:
           // Hold strong stance
           leg1State.targetHip  = POS_C_SERVO1;
@@ -1994,9 +1926,7 @@ void updateEmote3()
           break;
 
 
-      // ============================
-      // PHASE 3 — SETUP RESET
-      // ============================
+      // Ends the emote and resets Knightsaurus to rest position:
       case 3:
           // Set B stance targets
           leg1State.targetHip  = POS_B_SERVO1;
@@ -2029,19 +1959,8 @@ void updateEmote3()
 }
 
 
-
-
-
-
-
-// =====================================================
-// GAMEPAD ING — UPDATED TO USE GLOBAL COMMAND
-// =====================================================
+// Function for processing the remote controller commands (via the SPI Chars sent from ESP32)
 void processGamepad(char cmd) {
-  // There are different ways to query whether a button is pressed.
-  // By query each button individually:
-  //  a(), b(), x(), y(), l1(), etc...
-
 
   //== XBOX Screenshot trigger button = 0x0040 ==//
     if (cmd == 'J') {
@@ -2059,8 +1978,6 @@ void processGamepad(char cmd) {
     
     // Call Function Sound Effect
     soundEffect(random(1, 16));
-
-
   }
   else {
     // code for when A button is released
@@ -2095,7 +2012,7 @@ void processGamepad(char cmd) {
 
   //==  XBOX DPAD UP button = 0x01==//
   if (cmd == 'B') {
-    Serial.println("Walking forward...");
+    Serial.println("Walking forward..."); // Used for Debugging.
     walkingForward = true;
     walkingShutdown = false;
   }
@@ -2104,10 +2021,11 @@ void processGamepad(char cmd) {
     // code for when dpad up button is released
     walkingShutdown = true;
   }
+
   //==  XBOX Dpad DOWN button = 0x02==//
   if (cmd == 'C') {
     // code for when dpad down button is pushed
-    Serial.println("Walking backwards...");
+    Serial.println("Walking backwards..."); // Used for Debugging.
     walkingBackward = true;
     walkingShutdown = false;
   }
@@ -2143,8 +2061,6 @@ void processGamepad(char cmd) {
 
     // Call Head Right Function
     headRight();
-
-
   }
   else {
     // code for when RB button is released
@@ -2156,8 +2072,6 @@ void processGamepad(char cmd) {
 
     // Call Tail Right Function
     tailRight();
-
-
   }
   else {
     // code for when RT button is released
@@ -2169,8 +2083,6 @@ void processGamepad(char cmd) {
 
     // Call Head Left Function
     headLeft();
-
-
   }
   else {
     // code for when LB button is released
@@ -2182,21 +2094,6 @@ void processGamepad(char cmd) {
 
     // Call Tail Left Function
     tailLeft();
-
-
-  }
-  else {
-    // code for when LT button is released
-  }
-
-  //== XBOX Screenshot trigger button = 0x0040 ==//
-  if (cmd == 'J') {
-    // code for when LT button is pushed
-
-    // Call Tail Left Function
-    //tailLeft();
-
-
   }
   else {
     // code for when LT button is released
@@ -2209,29 +2106,30 @@ void processGamepad(char cmd) {
     roughTerrainMode = !roughTerrainMode;   // toggle mode
   }
 
-
 }
 
+// Setup Function for Knightsaurus. Initializes everything.
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(115200); // Serial Baudrate used for SPI and I2C Communications.
 
-  SPI.begin();
+  // SPI Initialization:
+  SPI.begin(); 
   pinMode(CS, OUTPUT);
   digitalWrite(CS, HIGH);
 
+  // Initializes the Head and Tail Servos (UNO):
   pwm.begin();
   pwm.setPWMFreq(50);
 
+  // Initializes the OLED Display:
   Wire.begin();  // A4/A5
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.display();
 
 
-  // =====================================================
-  // 1. Move ALL legs to B (neutral stance)
-  // =====================================================
+  // Set all legs to B (neutral stance)
   setServoAngle270(leg1Servos[0], POS_B_SERVO1);
   setServoAngle270(leg1Servos[1], POS_B_SERVO2);
 
@@ -2245,6 +2143,7 @@ void setup() {
   setServoAngle270(leg4Servos[1], POS_B_SERVO2_4);
 
 
+// Used for Debugging:
 /*
   // sets all to 0
   setServoAngle270(leg1Servos[0], SERVO1_Zero);
@@ -2261,21 +2160,16 @@ void setup() {
 */
 
   // Initialize the hips to test.
-  // REMOVE LATER OR CHANGE WHEN TURNING
   setServoAngle270(2, SERVO3_HOME_1_4);
   setServoAngle270(5, SERVO3_HOME_2_3);
   setServoAngle270(8, SERVO3_HOME_2_3);
   setServoAngle270(11, SERVO3_HOME_1_4);
 
 
-  // =====================================================
-  // 2. Give servos time to physically reach B stance
-  // =====================================================
-  delay(400);   // absolutely required
+  // Give servos time to physically reach B stance
+  delay(400); 
 
-  // =====================================================
-  // 3. Sync internal state to match physical B stance
-  // =====================================================
+  // Sync internal state of each leg to match physical B stance
   leg1State.hip  = POS_B_SERVO1;
   leg1State.knee = POS_B_SERVO2;
 
@@ -2288,30 +2182,33 @@ void setup() {
   leg4State.hip  = POS_B_SERVO1_4;
   leg4State.knee = POS_B_SERVO2_4;
 
-  // =====================================================
-  // 4. Reset gait engine state
-  // =====================================================
+
+  // Reset gait engine state
   gaitPhase = 0;
   lastStepTime = millis();
   walkingForward = false;   // MUST be false at boot
 
-  // =====================================================
-  // Other initialization
-  // =====================================================
+
+  // Initializes the LED Eyes:
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
 
+  // Initializes the Jaw Servo:
   jawServo.attach(JAW_SERVO_PIN);
   jawServo.write(JAW_CLOSED);
 
+  // Initializes the Tail Servo:
   tailServo.attach(TAIL_SERVO_PIN);
   tailServo.write(TAIL_ZERO);
 
+  // Initializes the Neck Servo:
   neckServo.attach(NECK_SERVO_PIN);
   neckServo.write(NECK_ZERO);
 
-  Serial1.begin(9600);
+  // Second Serial Value used for the DF Player:
+  Serial1.begin(9600); // Baudrate of 9600 for the DF Player Communications
 
+  // Initializes the DF Player:
   if (!myDFPlayer.begin(Serial1)) {
     Serial.println("DFPlayer Mini not found.");
   } else {
@@ -2319,11 +2216,12 @@ void setup() {
     myDFPlayer.volume(30);
   }
 
+  // Startup Sound Effect
   soundEffect(2);
 }
 
 
-
+// The Main Loop Function for Knightsaurus. Runs Continuously.
 void loop() {
 
   // Monitor the battery percentage:
@@ -2335,9 +2233,7 @@ void loop() {
   batteryVFiltered = 0.9 * batteryVFiltered + 0.1 * batteryV;
 
   int percent = getBatteryPercent(batteryVFiltered);
-
   
-
 
   // Serial prints for debugging and monitoring the battery percentage.
   Serial.print("Battery Voltage: ");
@@ -2420,6 +2316,5 @@ void loop() {
       lastDisplayUpdate = millis();
   }
 
-  //delay(150);
 
 }
