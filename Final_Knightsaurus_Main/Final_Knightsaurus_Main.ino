@@ -24,7 +24,7 @@
 #define SCREEN_HEIGHT 64
 
 // Use Wire because the screen is on A4/A5 with the PCA9685
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1, -1);
 
 // Definitions for the Display:
 const char* currentModeString = "IDLE";
@@ -2123,7 +2123,7 @@ void setup() {
   pwm.setPWMFreq(50);
 
   // Initializes the OLED Display:
-  Wire.begin();  // A4/A5
+  Wire1.begin();  // A4/A5
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.display();
