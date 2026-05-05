@@ -273,6 +273,8 @@ const int hipYawOutward[4] = { -1, +1, +1, -1 };
 // Auto-Tuning Parameters:
 float SPEED_SCALE = 0.8;        // 1.0 = normal speed
 
+const int turnDelay = 500;
+
 // Load scaling per leg (used for fine tuning)
 const float LEG1_LOAD_SCALE = 1.00;
 const float LEG2_LOAD_SCALE = 1.00;
@@ -848,7 +850,7 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_C_SERVO1_4);    // Leg 4 hip
       setServoAngle270(leg4Servos[1], POS_C_SERVO2_4);   // Leg 4 knee
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Push outward Legs 2 & 3 ----
       int yaw2 = hipYawNeutral[1] + hipYawOutward[1] * TURN_YAW;
@@ -857,7 +859,7 @@ void updateWalk() {
       setServoAngle270(hipYawChannel[1], yaw2);
       setServoAngle270(hipYawChannel[2], yaw3);
 
-      delay(250);
+      delay(turnDelay);
 
      // ---- put Legs 1 & 4 down ----
       setServoAngle270(leg1Servos[0], POS_B_SERVO1);      // Leg 1 hip
@@ -866,7 +868,7 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_B_SERVO1_4);    // Leg 4 hip
       setServoAngle270(leg4Servos[1], POS_B_SERVO2_4);   // Leg 4 knee
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- lift Legs 2 & 3 (hip + knee to C) ----
       setServoAngle270(leg2Servos[0], POS_C_SERVO1_2);
@@ -875,13 +877,13 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_C_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_C_SERVO2_3);
 
-      delay(250);
+      delay(turnDelay);
 
       // legs 2 and 3 hips back to 0
       setServoAngle270(5, SERVO3_HOME_2_3);
       setServoAngle270(8, SERVO3_HOME_2_3);
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Legs 2 & 3 back to B ----
       setServoAngle270(leg2Servos[0], POS_B_SERVO1_2);
@@ -890,7 +892,7 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_B_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_B_SERVO2_3);
 
-      delay(250);
+      delay(turnDelay);
 
       return;
   }
@@ -912,7 +914,7 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_C_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_C_SERVO2_3);
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Push outward Legs 1 & 4 ----
       int yaw1 = hipYawNeutral[0] + hipYawOutward[0] * TURN_YAW;
@@ -921,7 +923,7 @@ void updateWalk() {
       setServoAngle270(hipYawChannel[0], yaw1);
       setServoAngle270(hipYawChannel[3], yaw4);
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Legs 2 & 3 down ----
       setServoAngle270(leg2Servos[0], POS_B_SERVO1_2);
@@ -930,7 +932,7 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_B_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_B_SERVO2_3);
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Legs 1 & 4 up ----
       setServoAngle270(leg1Servos[0], POS_C_SERVO1);
@@ -939,12 +941,12 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_C_SERVO1_4);
       setServoAngle270(leg4Servos[1], POS_C_SERVO2_4);
 
-      delay(250);
+      delay(turnDelay);
 
       setServoAngle270(11, SERVO3_HOME_1_4);   
       setServoAngle270(2, SERVO3_HOME_1_4);
 
-      delay(250);
+      delay(turnDelay);
 
       // ---- Legs 1 & 4 back down ----
       setServoAngle270(leg1Servos[0], POS_B_SERVO1);
@@ -953,7 +955,7 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_B_SERVO1_4);
       setServoAngle270(leg4Servos[1], POS_B_SERVO2_4);
 
-      delay(250);
+      delay(turnDelay);
 
       return;
   }
@@ -1228,7 +1230,7 @@ void killSwitch()
   // Add in a switch to turn off the LiPo
 
   // Exits the Arduino Program.
-  //exit(0);
+  exit(0);
 }
 
 // Gets the battery percentage based on the LiPo voltage at an analog pin
