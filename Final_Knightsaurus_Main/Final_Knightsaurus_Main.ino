@@ -1965,12 +1965,12 @@ void updateEmote3()
 void processGamepad(char cmd) {
 
   //== XBOX Screenshot trigger button = 0x0040 ==//
-    if (cmd == 'J') {
+  if (cmd == 'J') {
     // code for when J button is pushed
     
     // Activates Kill Switch Function
     killSwitchFlag = true;
-
+    killSwitch();
 
   }
 
