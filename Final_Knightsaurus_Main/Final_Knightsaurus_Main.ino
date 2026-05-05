@@ -273,7 +273,8 @@ const int hipYawOutward[4] = { -1, +1, +1, -1 };
 // Auto-Tuning Parameters:
 float SPEED_SCALE = 0.8;        // 1.0 = normal speed
 
-const int turnDelay = 500;
+const int turnDelay = 250; // Delay for the each turning movement (adjusts speed of the steps)
+const int turnDelay_btwnSteps = 500; // The delay between each step for the turning.
 
 // Load scaling per leg (used for fine tuning)
 const float LEG1_LOAD_SCALE = 1.00;
@@ -868,7 +869,7 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_B_SERVO1_4);    // Leg 4 hip
       setServoAngle270(leg4Servos[1], POS_B_SERVO2_4);   // Leg 4 knee
 
-      delay(turnDelay);
+      delay(turnDelay_btwnSteps);
 
       // ---- lift Legs 2 & 3 (hip + knee to C) ----
       setServoAngle270(leg2Servos[0], POS_C_SERVO1_2);
@@ -892,7 +893,7 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_B_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_B_SERVO2_3);
 
-      delay(turnDelay);
+      delay(turnDelay_btwnSteps);
 
       return;
   }
@@ -932,7 +933,7 @@ void updateWalk() {
       setServoAngle270(leg3Servos[0], POS_B_SERVO1_3);
       setServoAngle270(leg3Servos[1], POS_B_SERVO2_3);
 
-      delay(turnDelay);
+      delay(turnDelay_btwnSteps);
 
       // ---- Legs 1 & 4 up ----
       setServoAngle270(leg1Servos[0], POS_C_SERVO1);
@@ -955,7 +956,7 @@ void updateWalk() {
       setServoAngle270(leg4Servos[0], POS_B_SERVO1_4);
       setServoAngle270(leg4Servos[1], POS_B_SERVO2_4);
 
-      delay(turnDelay);
+      delay(turnDelay_btwnSteps);
 
       return;
   }
